@@ -1,6 +1,7 @@
+import os
+
 import requests
 from config import TELEGRAM_SEND_MESSAGE_URL
-from ticket_bot import TicketFinder
 
 
 class TelegramBot:
@@ -29,12 +30,14 @@ class TelegramBot:
 
         message = data['message']
 
-        self.chat_id = message['chat']['id']
+        # self.chat_id = message['chat']['id']
         self.incoming_message_text = message['text'].lower()
         self.first_name = message['from']['first_name']
 
     def send_ticket_options(self, tickets):
-        self.send_message(tickets)
+        res = requests.get(TELEGRAM_SEND_MESSAGE_URL.format(os.environ['CHAT_ID'], tickets))
+
+        return True if res.status_code == 200 else False
 
     def action(self):
         """

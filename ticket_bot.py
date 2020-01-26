@@ -187,5 +187,6 @@ class TicketFinder:
         res = self.selenium_driver.find_elements_by_css_selector(selector)
         return res
 
-
+    def close_driver(self):
+        self.selenium_driver.close()
 
