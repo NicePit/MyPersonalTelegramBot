@@ -4,3 +4,4 @@ flask
 requests
 selenium
 tqdm
+apscheduler

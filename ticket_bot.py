@@ -12,7 +12,7 @@ import itertools
 year = 2020
 months = range(1, 13)
 origin_city = "Тель-Авив, Израиль,  TLV"
-TOP_N_CHEAPEST_DESTINATIONS_PER_DAY = 20
+TOP_N_CHEAPEST_DESTINATIONS_PER_DAY = 3
 STOP_CITIES = []
 MAX_RETIRES = 5
 CITIES = {'Rome': 'Рим, Италия,  ROM', 'Barcelona': 'Барселона, Испания, Эль-Прат BCN',
@@ -99,7 +99,7 @@ class TicketFinder:
             n = 0
             while n < MAX_RETIRES:
                 n += 1
-                rel_days = repeat_query(2 ** n, selector='.selectable.calendar-day')
+                rel_days = self.repeat_query(2 ** n, selector='.selectable.calendar-day')
                 if len(rel_days) > 0:
                     break
 
@@ -177,8 +177,15 @@ class TicketFinder:
             else:
                 df.to_excel(writer, sheet_name='all_flights', index=False)
                 self.all_tickets = df
-            self.selenium_driver.get(self, url)
+            self.selenium_driver.get(self.url)
 
         writer.save()
         writer.close()
+
+    def repeat_query(self, time_to_sleep, selector):
+        time.sleep(time_to_sleep)
+        res = self.selenium_driver.find_elements_by_css_selector(selector)
+        return res
+
+
 

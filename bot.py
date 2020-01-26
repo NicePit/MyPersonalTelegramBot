@@ -18,7 +18,7 @@ class TelegramBot:
         self.chat_id = None
         self.text = None
         self.first_name = None
-        self.last_name = None
+        self.incoming_message_text = None
 
     def parse_webhook_data(self, data):
         """
@@ -32,7 +32,9 @@ class TelegramBot:
         self.chat_id = message['chat']['id']
         self.incoming_message_text = message['text'].lower()
         self.first_name = message['from']['first_name']
-        self.outgoing_message_text = ''
+
+    def send_ticket_options(self, tickets):
+        self.send_message(tickets)
 
     def action(self):
         """
@@ -44,27 +46,17 @@ class TelegramBot:
         success = None
 
         if self.incoming_message_text == '/hello':
-            self.outgoing_message_text = "Hello {}!".format(self.first_name)
-            success = self.send_message()
-
-        if self.incoming_message_text == '/rad':
-            self.outgoing_message_text = '🤙bee'
-            success = self.send_message()
-
-        if self.incoming_message_text == '/tickets':
-            self.outgoing_message_text = '🤙Searching for tickets...It can take some time'
-            success = self.send_message()
-            cls = TicketFinder()
-            cls.run(destination=None, min_days=3, max_days=7, target_month=4, departure_days=[1,2])
+            message = "Hello {}!".format(self.first_name)
+            success = self.send_message(message)
 
         return success
 
-    def send_message(self):
+    def send_message(self, message):
         """
         Sends message to Telegram servers.
         """
 
-        res = requests.get(TELEGRAM_SEND_MESSAGE_URL.format(self.chat_id, self.outgoing_message_text))
+        res = requests.get(TELEGRAM_SEND_MESSAGE_URL.format(self.chat_id, message))
 
         return True if res.status_code == 200 else False
 
