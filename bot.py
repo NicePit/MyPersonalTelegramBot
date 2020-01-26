@@ -1,5 +1,6 @@
 import requests
 from config import TELEGRAM_SEND_MESSAGE_URL
+from ticket_bot import TicketFinder
 
 
 class TelegramBot:
@@ -31,7 +32,7 @@ class TelegramBot:
         self.chat_id = message['chat']['id']
         self.incoming_message_text = message['text'].lower()
         self.first_name = message['from']['first_name']
-        self.last_name = message['from']['last_name']
+        self.outgoing_message_text = ''
 
     def action(self):
         """
@@ -43,12 +44,18 @@ class TelegramBot:
         success = None
 
         if self.incoming_message_text == '/hello':
-            self.outgoing_message_text = "Hello {} {}!".format(self.first_name, self.last_name)
+            self.outgoing_message_text = "Hello {}!".format(self.first_name)
             success = self.send_message()
 
         if self.incoming_message_text == '/rad':
-            self.outgoing_message_text = '🤙'
+            self.outgoing_message_text = '🤙bee'
             success = self.send_message()
+
+        if self.incoming_message_text == '/tickets':
+            self.outgoing_message_text = '🤙Searching for tickets...It can take some time'
+            success = self.send_message()
+            cls = TicketFinder()
+            cls.run(destination=None, min_days=3, max_days=7, target_month=4, departure_days=[1,2])
 
         return success
 
@@ -69,4 +76,9 @@ class TelegramBot:
             url:str: Provides the telegram server with a endpoint for webhook data
         """
 
-        requests.get(url)
+        response = requests.get(url)
+        if response.status_code == 200:
+            print(url)
+            print('Webhook is successufully set up')
+        else:
+            print('BAM!')

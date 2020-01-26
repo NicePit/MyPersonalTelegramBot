@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 
-from telegram_bot import TelegramBot
+from bot import TelegramBot
 from config import TELEGRAM_INIT_WEBHOOK_URL
 
 app = Flask(__name__)

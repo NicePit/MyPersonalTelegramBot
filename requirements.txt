@@ -1,0 +1,6 @@
+xlsxwriter
+pandas
+flask
+requests
+selenium
+tqdm
