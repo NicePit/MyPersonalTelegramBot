@@ -24,18 +24,20 @@ cron.add_job(search_tickets, 'interval', minutes=1)
 cron.start()
 
 
-@app.route('/webhook', methods=['GET'])
+@app.route('/', methods=['GET'])
 def index():
     return jsonify(success={"message": "App is working"})
 
 
 @app.route('/webhook', methods=['POST'])
 def telegram_post():
-    req = request.get_json()
-    bot = TelegramBot()
-    bot.parse_webhook_data(req)
-    success = bot.action()
-    return jsonify(success=success)
+    print("New webhook request")
+    pass
+    # req = request.get_json()
+    # bot = TelegramBot()
+    # bot.parse_webhook_data(req)
+    # success = bot.action()
+    # return jsonify(success=success)
 
 
 if __name__ == '__main__':
