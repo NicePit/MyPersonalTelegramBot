@@ -74,6 +74,6 @@ class TelegramBot:
         response = requests.get(url)
         if response.status_code == 200:
             print(url)
-            print('Webhook is successufully set up')
+            print('Webhook is successfully set up')
         else:
-            print('BAM!')
+            print(f'Error in setting ip webhook: {response.status_code}')
