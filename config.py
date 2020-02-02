@@ -1,4 +1,7 @@
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 TOKEN = os.environ['TELEGRAM_SECRET_TOKEN']
 APP_ENDPOINT = os.environ['APP_ENDPOINT']

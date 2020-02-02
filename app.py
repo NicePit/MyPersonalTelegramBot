@@ -9,6 +9,7 @@ app = Flask(__name__)
 TelegramBot.init_webhook(TELEGRAM_INIT_WEBHOOK_URL)
 
 
+@app.route('/tickets', methods=['GET'])
 def search_tickets():
     finder = TicketFinder()
     bot = TelegramBot()
@@ -18,10 +19,10 @@ def search_tickets():
     serialized_tickets = direct_tickets.to_dict()
     bot.send_ticket_options(serialized_tickets)
 
-
-cron = BackgroundScheduler(daemon=True)
-cron.add_job(search_tickets, 'interval', minutes=1)
-cron.start()
+#
+# cron = BackgroundScheduler(daemon=True)
+# cron.add_job(search_tickets, 'interval', minutes=1)
+# cron.start()
 
 
 @app.route('/', methods=['GET'])

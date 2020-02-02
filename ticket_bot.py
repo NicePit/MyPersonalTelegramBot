@@ -194,3 +194,8 @@ class TicketFinder:
 
     def close_driver(self):
         self.selenium_driver.close()
+
+
+if __name__ == '__main__':
+    finder = TicketFinder()
+    finder.run(destination=None, min_days=3, max_days=7, target_month=4, departure_days=[1])

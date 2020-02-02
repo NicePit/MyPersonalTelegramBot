@@ -6,3 +6,4 @@ selenium
 tqdm
 apscheduler
 gunicorn
+python-dotenv
