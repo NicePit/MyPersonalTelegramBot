@@ -27,7 +27,7 @@ def search_tickets():
 
 @app.route('/', methods=['GET'])
 def index():
-    return jsonify(success={"message": "App is working"})
+    return jsonify(message="App is working")
 
 
 @app.route('/webhook', methods=['POST'])
