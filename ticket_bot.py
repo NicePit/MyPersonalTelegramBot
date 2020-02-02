@@ -18,9 +18,10 @@ STOP_CITIES = []
 MAX_RETIRES = 5
 CITIES = {'Rome': 'Рим, Италия,  ROM', 'Barcelona': 'Барселона, Испания, Эль-Прат BCN',
           'Lisbon': 'Лиссабон, Португалия, Лиссабон LIS'}
+
 # --------------------------------------------------------------
-
-
+GECKODRIVER_PATH = os.environ['GECKODRIVER_PATH']
+FIREFOX_PATH = os.environ['FIREFOX_PATH']
 
 
 class TicketFinder:
@@ -29,8 +30,9 @@ class TicketFinder:
 
         cap = DesiredCapabilities().FIREFOX
         cap["marionette"] = True
-        GECKODRIVER_PATH = os.environ['GECKODRIVER_PATH']
-        self.selenium_driver = webdriver.Firefox(capabilities=cap, executable_path=GECKODRIVER_PATH)
+
+        self.selenium_driver = webdriver.Firefox(capabilities=cap, executable_path=GECKODRIVER_PATH,
+                                                 firefox_binary=FIREFOX_PATH)
         self.url = 'https://aviasales.ru/calendar'
         self.selenium_driver.get(self.url)
 
@@ -192,4 +194,3 @@ class TicketFinder:
 
     def close_driver(self):
         self.selenium_driver.close()
-
