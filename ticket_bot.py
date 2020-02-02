@@ -6,6 +6,7 @@ from collections import defaultdict
 import pandas as pd
 from tqdm import tqdm
 import itertools
+import os
 
 # --------------------STATIC PARAMS----------------------------
 
@@ -19,15 +20,17 @@ CITIES = {'Rome': 'Рим, Италия,  ROM', 'Barcelona': 'Барселона
           'Lisbon': 'Лиссабон, Португалия, Лиссабон LIS'}
 # --------------------------------------------------------------
 
-cap = DesiredCapabilities().FIREFOX
-cap["marionette"] = True
+
 
 
 class TicketFinder:
 
     def __init__(self):
 
-        self.selenium_driver = webdriver.Firefox(capabilities=cap)
+        cap = DesiredCapabilities().FIREFOX
+        cap["marionette"] = True
+        GECKODRIVER_PATH = os.environ['GECKODRIVER_PATH']
+        self.selenium_driver = webdriver.Firefox(capabilities=cap, executable_path=GECKODRIVER_PATH)
         self.url = 'https://aviasales.ru/calendar'
         self.selenium_driver.get(self.url)
 
