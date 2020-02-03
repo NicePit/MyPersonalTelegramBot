@@ -39,7 +39,7 @@ def telegram_post():
     # bot.parse_webhook_data(req)
     # success = bot.action()
     # return jsonify(success=success)
-    return True
+    return {"message": "Request is processed"}
 
 
 if __name__ == '__main__':
