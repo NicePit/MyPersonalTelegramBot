@@ -26,9 +26,6 @@ CITIES = {'Rome': 'Рим, Италия,  ROM', 'Barcelona': 'Барселона
           'Lisbon': 'Лиссабон, Португалия, Лиссабон LIS'}
 
 # --------------------------------------------------------------
-GECKODRIVER_PATH = os.environ['GECKODRIVER_PATH']
-FIREFOX_PATH = os.environ['FIREFOX_PATH']
-FIREFOX_HEADLESS = os.environ['FIREFOX_HEADLESS']
 
 
 class TicketFinder:
