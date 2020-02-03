@@ -1,12 +1,17 @@
 import time
+
+from dotenv import load_dotenv
 from selenium import webdriver
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.common.exceptions import ElementNotInteractableException
+from selenium.webdriver.firefox.options import Options
 from collections import defaultdict
 import pandas as pd
 from tqdm import tqdm
 import itertools
 import os
+
+load_dotenv()
 
 # --------------------STATIC PARAMS----------------------------
 
@@ -22,16 +27,19 @@ CITIES = {'Rome': 'Рим, Италия,  ROM', 'Barcelona': 'Барселона
 # --------------------------------------------------------------
 GECKODRIVER_PATH = os.environ['GECKODRIVER_PATH']
 FIREFOX_PATH = os.environ['FIREFOX_PATH']
+FIREFOX_HEADLESS = os.environ['FIREFOX_HEADLESS']
 
 
 class TicketFinder:
 
     def __init__(self):
 
-        cap = DesiredCapabilities().FIREFOX
-        cap["marionette"] = True
+        print("Instantiation of webdriver")
+        options = Options()
+        if FIREFOX_HEADLESS:
+            options.headless = True
 
-        self.selenium_driver = webdriver.Firefox(capabilities=cap, executable_path=GECKODRIVER_PATH,
+        self.selenium_driver = webdriver.Firefox(options=options, executable_path=GECKODRIVER_PATH,
                                                  firefox_binary=FIREFOX_PATH)
         self.url = 'https://aviasales.ru/calendar'
         self.selenium_driver.get(self.url)
@@ -40,6 +48,8 @@ class TicketFinder:
         self.all_tickets = None
 
     def run(self, destination, min_days, max_days, target_month, departure_days):
+
+        print("Start scraping")
 
         if destination:
             destination_city = CITIES[destination]
