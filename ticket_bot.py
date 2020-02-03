@@ -5,6 +5,7 @@ from selenium import webdriver
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.common.exceptions import ElementNotInteractableException
 from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.chrome.options import Options as ChromeOptions
 from collections import defaultdict
 import pandas as pd
 from tqdm import tqdm
@@ -35,13 +36,23 @@ class TicketFinder:
     def __init__(self):
 
         print("Instantiation of webdriver")
-        options = Options()
-        if FIREFOX_HEADLESS:
-            print('Running headless session')
-            options.headless = True
+        # options = Options()
+        # if FIREFOX_HEADLESS:
+        #     print('Running headless session')
+        #     options.headless = True
+        #
+        # self.selenium_driver = webdriver.Firefox(options=options, executable_path=GECKODRIVER_PATH,
+        #                                          firefox_binary=FIREFOX_PATH)
 
-        self.selenium_driver = webdriver.Firefox(options=options, executable_path=GECKODRIVER_PATH,
-                                                 firefox_binary=FIREFOX_PATH)
+        chrome_options = ChromeOptions()
+        chrome_options.binary_location = os.environ.get('GOOGLE_CHROME_BIN')
+        chrome_options.add_argument("--headless")
+        chrome_options.add_argument("--no-sandbox")
+        chrome_options.add_argument("--disable-gpu")
+        chrome_options.add_argument("--disable-features=NetworkService")
+        self.selenium_driver = webdriver.Chrome(chrome_options=chrome_options,
+                                                executable_path=os.environ.get('CHROMEDRIVER_PATH'))
+
         self.url = 'https://aviasales.ru/calendar'
         self.selenium_driver.get(self.url)
 
