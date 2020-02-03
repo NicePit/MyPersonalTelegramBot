@@ -37,6 +37,7 @@ class TicketFinder:
         print("Instantiation of webdriver")
         options = Options()
         if FIREFOX_HEADLESS:
+            print('Running headless session')
             options.headless = True
 
         self.selenium_driver = webdriver.Firefox(options=options, executable_path=GECKODRIVER_PATH,
