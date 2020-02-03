@@ -76,4 +76,4 @@ class TelegramBot:
             print(url)
             print('Webhook is successfully set up')
         else:
-            print(f'Error in setting ip webhook: {response.status_code}')
+            print(f'{response.status_code} Error in setting up webhook: {response.text}')
