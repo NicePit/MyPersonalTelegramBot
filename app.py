@@ -39,6 +39,7 @@ def telegram_post():
     # bot.parse_webhook_data(req)
     # success = bot.action()
     # return jsonify(success=success)
+    return True
 
 
 if __name__ == '__main__':
