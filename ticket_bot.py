@@ -7,8 +7,8 @@ from selenium.webdriver.chrome.options import Options as ChromeOptions
 from collections import defaultdict
 import pandas as pd
 from tqdm import tqdm
-import itertools
 import os
+from selenium.webdriver.common.action_chains import ActionChains
 
 load_dotenv()
 
@@ -23,14 +23,14 @@ MAX_RETIRES = 5
 CITIES = {'Rome': 'Рим, Италия,  ROM',
           'Barcelona': 'Барселона, Испания, Эль-Прат BCN',
           'Lisbon': 'Лиссабон, Португалия, Лиссабон LIS'}
-SLEEP_TIME = 8
+SLEEP_TIME = 10
 
 # --------------------------------------------------------------
 GOOGLE_CHROME_BIN = os.environ.get('GOOGLE_CHROME_BIN')
 CHROMEDRIVER_PATH = os.environ.get('CHROMEDRIVER_PATH')
 
 
-class TicketFinder:
+class FareFinder:
 
     def __init__(self):
 
@@ -38,6 +38,8 @@ class TicketFinder:
 
         chrome_options = ChromeOptions()
         chrome_options.binary_location = GOOGLE_CHROME_BIN
+        # chrome_options.add_argument("--window-size=1920,1080")
+        # chrome_options.add_argument("--start-maximized")
         # chrome_options.add_argument("--headless")
         # chrome_options.add_argument("--no-sandbox")
         # chrome_options.add_argument("--disable-gpu")
@@ -53,9 +55,9 @@ class TicketFinder:
         kwargs = {"destination_city": destination, "min_days": min_days, "max_days": max_days,
                   "departure_months": departure_months, "departure_days": departure_days}
 
-        print('Scraping for direct flights')
+        print('SCRAPING DIRECT FLIGHTS')
         direct_tickets = self._search(direct=True, **kwargs)
-        print('Scraping for all flights')
+        print('SCRAPING ALL FLIGHTS')
         all_tickets = self._search(direct=False, **kwargs)
         return direct_tickets, all_tickets
 
@@ -68,6 +70,63 @@ class TicketFinder:
             self.selenium_driver.find_element_by_css_selector('a.close-popup[data-args=calendar-tooltip]').click()
         except ElementNotInteractableException:
             pass
+
+        self._set_kwargs(**kwargs)
+        self.selenium_driver.execute_script(
+            f"document.querySelector('.feedback-container').style.display=\'None\'")
+        self.selenium_driver.find_element_by_css_selector('.c-label-button').click()
+        time.sleep(SLEEP_TIME)
+
+        self._set_currency()
+
+        dates = self._find_dates()
+        tickets_per_date = list()
+
+        for idx, date in enumerate(dates):
+            n = 1
+            print("date", idx + 1)
+            while n < MAX_RETIRES:
+                try:
+                    date.click()
+                    cur_date_tickets = self._find_tickets_for_current_date(direct)
+                    if len(cur_date_tickets) > 1:
+                        tickets_per_date.append(cur_date_tickets)
+                        break
+                except Exception as e:
+                    self.selenium_driver.execute_script("arguments[0].scrollIntoView();", date)
+                    y_location = date.location['y']
+                    self.selenium_driver.execute_script(f"window.scrollTo(0, {y_location-100})")
+                    print("Scrolling up a bit")
+                    time.sleep(2 ** n)
+                    n += 1
+                    continue
+
+        all_tickets = list()
+        for date in tickets_per_date:
+            for dest in date:
+                for opt in dest:
+                    all_tickets.append(opt)
+        df = pd.DataFrame(all_tickets)
+        df = self._postprocess_dataframe(df)
+        return df
+
+    def _set_currency(self):
+        print("Setting currency")
+        n = 1
+        while n < MAX_RETIRES:
+            try:
+                currency_box = self.selenium_driver.find_element_by_css_selector('div[data-goal="currency"]')
+                currency_box.click()
+                time.sleep(1 ** n)
+                usd_currency = currency_box.find_element_by_css_selector('li[data-value="USD"]')
+                usd_currency.click()
+                break
+            except Exception as e:
+                print(e)
+                n += 1
+                continue
+
+    def _set_kwargs(self, **kwargs):
 
         min_days = kwargs.get('min_days')
         max_days = kwargs.get('max_days')
@@ -86,29 +145,6 @@ class TicketFinder:
             self._select_days(departure_month=departure_months[0], departure_days=departure_days)
         else:
             self._select_months(departure_months=departure_months)
-
-        self.selenium_driver.find_element_by_css_selector('.c-label-button').click()
-
-        time.sleep(SLEEP_TIME)
-        currency_box = self.selenium_driver.find_element_by_css_selector('div[data-goal="currency"]')
-        currency_box.click()
-        usd_currency = currency_box.find_element_by_css_selector('li[data-value="USD"]')
-        usd_currency.click()
-
-        dates = self._find_dates()
-        tickets_per_date = list()
-        for date in dates:
-            cur_date_tickets = self._find_tickets_for_date(date, direct)
-            tickets_per_date.append(cur_date_tickets)
-
-        all_tickets = list()
-        for date in tickets_per_date:
-            for dest in date:
-                for opt in dest:
-                    all_tickets.append(opt)
-        df = pd.DataFrame(all_tickets)
-        df = self._postprocess_dataframe(df)
-        return df
 
     def _postprocess_dataframe(self, df: pd.DataFrame):
         df['price'] = df['price'].apply(lambda x: x.replace(',', '').replace('$', ''))
@@ -129,17 +165,31 @@ class TicketFinder:
 
     def _set_origin(self):
         print("Setting origin")
-        self.selenium_driver.find_element_by_css_selector("#origin").send_keys(ORIGIN_CITY)
-        time.sleep(SLEEP_TIME)
-        self.selenium_driver.find_element_by_css_selector(f"a[title='{ORIGIN_CITY}']").click()
+        tries = 1
+        while tries < MAX_RETIRES:
+            try:
+                self.selenium_driver.find_element_by_css_selector("#origin").send_keys(ORIGIN_CITY)
+                time.sleep(SLEEP_TIME * tries)
+                self.selenium_driver.find_element_by_css_selector(f"a[title='{ORIGIN_CITY}']").click()
+                break
+            except Exception as e:
+                print(e)
+                tries += 1
 
     def _set_destination(self, destination_city):
         print("Setting destination")
         if destination_city:
-            self.selenium_driver.find_element_by_css_selector("#destination.in-text.tt-query").send_keys(
-                destination_city)
-            time.sleep(SLEEP_TIME)
-            self.selenium_driver.find_element_by_css_selector(f"a[title='{destination_city}']").click()
+            tries = 1
+            while tries < MAX_RETIRES:
+                try:
+                    self.selenium_driver.find_element_by_css_selector("#destination.in-text.tt-query").send_keys(
+                        destination_city)
+                    time.sleep(SLEEP_TIME * tries)
+                    self.selenium_driver.find_element_by_css_selector(f"a[title='{destination_city}']").click()
+                    break
+                except Exception as e:
+                    print(e)
+                    tries += 2
 
     def _select_days(self, departure_month, departure_days):
         self.selenium_driver.find_element_by_css_selector('a[data-goal=exact_date]').click()
@@ -174,8 +224,7 @@ class TicketFinder:
             raise Exception('No tickets found')
         return rel_days
 
-    def _find_tickets_for_date(self, date, direct: bool):
-        date.click()
+    def _find_tickets_for_current_date(self, direct: bool):
         destinations = list()
         n = 1
         while n < MAX_RETIRES:
@@ -205,6 +254,7 @@ class TicketFinder:
             try:
                 if idx2 != 0:
                     destination.click()
+                    time.sleep(2)
                 dest_name = ' - '.join(
                     [el.text for el in destination.find_elements_by_css_selector('.day-prices-header span')][
                     :-1])
@@ -219,9 +269,7 @@ class TicketFinder:
                         {'destination': dest_name, 'price': option_price, 'freshness': option_freshness,
                          'dates': option_dates, 'link': option_link})
             except Exception as e:
-                print(f"EXCEPTION: {e}")
-                continue
-
+                print(e)
         return list(tickets.values())
 
     def _repeat_query(self, time_to_sleep, selector):
@@ -234,5 +282,5 @@ class TicketFinder:
 
 
 if __name__ == '__main__':
-    finder = TicketFinder()
+    finder = FareFinder()
     finder.run(min_days=4, max_days=8, departure_months=[4], departure_days=[1, 2, 3, 4, 5])
