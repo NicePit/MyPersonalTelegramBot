@@ -8,7 +8,6 @@ from collections import defaultdict
 import pandas as pd
 from tqdm import tqdm
 import os
-from selenium.webdriver.common.action_chains import ActionChains
 
 load_dotenv()
 
@@ -17,13 +16,14 @@ load_dotenv()
 YEAR = 2020
 MONTHS = range(1, 13)
 ORIGIN_CITY = "Тель-Авив, Израиль,  TLV"
-TOP_N_CHEAPEST_DESTINATIONS_PER_DAY = 5
+TOP_N_CHEAPEST_DESTINATIONS_PER_DAY = 2
 STOP_CITIES = []
-MAX_RETIRES = 5
+MAX_RETRIES = 10
+SLEEP_TIME = 10
+
 CITIES = {'Rome': 'Рим, Италия,  ROM',
           'Barcelona': 'Барселона, Испания, Эль-Прат BCN',
           'Lisbon': 'Лиссабон, Португалия, Лиссабон LIS'}
-SLEEP_TIME = 10
 
 # --------------------------------------------------------------
 GOOGLE_CHROME_BIN = os.environ.get('GOOGLE_CHROME_BIN')
@@ -38,12 +38,12 @@ class FareFinder:
 
         chrome_options = ChromeOptions()
         chrome_options.binary_location = GOOGLE_CHROME_BIN
-        # chrome_options.add_argument("--window-size=1920,1080")
-        # chrome_options.add_argument("--start-maximized")
-        # chrome_options.add_argument("--headless")
-        # chrome_options.add_argument("--no-sandbox")
-        # chrome_options.add_argument("--disable-gpu")
-        # chrome_options.add_argument("--disable-features=NetworkService")
+        chrome_options.add_argument("--window-size=1920,1080")
+        chrome_options.add_argument("--start-maximized")
+        chrome_options.add_argument("--headless")
+        chrome_options.add_argument("--no-sandbox")
+        chrome_options.add_argument("--disable-gpu")
+        chrome_options.add_argument("--disable-features=NetworkService")
         self.selenium_driver = webdriver.Chrome(chrome_options=chrome_options,
                                                 executable_path=CHROMEDRIVER_PATH)
 
@@ -85,7 +85,7 @@ class FareFinder:
         for idx, date in enumerate(dates):
             n = 1
             print("date", idx + 1)
-            while n < MAX_RETIRES:
+            while n < MAX_RETRIES:
                 try:
                     date.click()
                     cur_date_tickets = self._find_tickets_for_current_date(direct)
@@ -113,16 +113,16 @@ class FareFinder:
     def _set_currency(self):
         print("Setting currency")
         n = 1
-        while n < MAX_RETIRES:
+        while n < MAX_RETRIES:
             try:
                 currency_box = self.selenium_driver.find_element_by_css_selector('div[data-goal="currency"]')
                 currency_box.click()
-                time.sleep(1 ** n)
+                time.sleep(2 ** n)
                 usd_currency = currency_box.find_element_by_css_selector('li[data-value="USD"]')
                 usd_currency.click()
                 break
             except Exception as e:
-                print(e)
+                print("Currency settings:", e)
                 n += 1
                 continue
 
@@ -166,21 +166,21 @@ class FareFinder:
     def _set_origin(self):
         print("Setting origin")
         tries = 1
-        while tries < MAX_RETIRES:
+        while tries < MAX_RETRIES:
             try:
                 self.selenium_driver.find_element_by_css_selector("#origin").send_keys(ORIGIN_CITY)
                 time.sleep(SLEEP_TIME * tries)
                 self.selenium_driver.find_element_by_css_selector(f"a[title='{ORIGIN_CITY}']").click()
                 break
             except Exception as e:
-                print(e)
+                print("Setting origin:", e)
                 tries += 1
 
     def _set_destination(self, destination_city):
         print("Setting destination")
         if destination_city:
             tries = 1
-            while tries < MAX_RETIRES:
+            while tries < MAX_RETRIES:
                 try:
                     self.selenium_driver.find_element_by_css_selector("#destination.in-text.tt-query").send_keys(
                         destination_city)
@@ -188,7 +188,7 @@ class FareFinder:
                     self.selenium_driver.find_element_by_css_selector(f"a[title='{destination_city}']").click()
                     break
                 except Exception as e:
-                    print(e)
+                    print("Setting destination:", e)
                     tries += 2
 
     def _select_days(self, departure_month, departure_days):
@@ -214,7 +214,7 @@ class FareFinder:
     def _find_dates(self):
         rel_days = list()
         n = 0
-        while n < MAX_RETIRES:
+        while n < MAX_RETRIES:
             n += 1
             rel_days = self._repeat_query(2 ** n, selector='.selectable.calendar-day')
             if len(rel_days) > 0:
@@ -227,14 +227,14 @@ class FareFinder:
     def _find_tickets_for_current_date(self, direct: bool):
         destinations = list()
         n = 1
-        while n < MAX_RETIRES:
+        while n < MAX_RETRIES:
             try:
-                time.sleep(2)
                 self.selenium_driver.find_element_by_css_selector('.link-but-small.default').click()
                 destinations = self.selenium_driver.find_elements_by_css_selector('.day-prices-route')
                 if len(destinations) > 0:
                     break
-            except:
+            except Exception as e:
+                print("Tickets for current date:", e)
                 time.sleep(2 ** n)
                 n += 1
                 continue
@@ -269,7 +269,7 @@ class FareFinder:
                         {'destination': dest_name, 'price': option_price, 'freshness': option_freshness,
                          'dates': option_dates, 'link': option_link})
             except Exception as e:
-                print(e)
+                print("Current day tickets destinations:", e)
         return list(tickets.values())
 
     def _repeat_query(self, time_to_sleep, selector):
@@ -283,4 +283,5 @@ class FareFinder:
 
 if __name__ == '__main__':
     finder = FareFinder()
-    finder.run(min_days=4, max_days=8, departure_months=[4], departure_days=[1, 2, 3, 4, 5])
+    direct_tickets, all_tickets = finder.run(min_days=4, max_days=8, departure_months=[4], departure_days=[1])
+    print()
