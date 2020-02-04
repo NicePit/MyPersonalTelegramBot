@@ -21,7 +21,7 @@ def telegram_post():
 
 
 cron = BackgroundScheduler(daemon=True)
-cron.add_job(search_tickets, 'interval', minutes=1,
+cron.add_job(search_tickets, 'interval', hours=12,
              kwargs={'min_days': 3, 'max_days': 7,
                      'departure_months': [4], 'departure_days': [1]})
 cron.start()
