@@ -52,6 +52,9 @@ class TelegramBot:
             message = "Hello {}!".format(self.first_name)
             success = self.send_message(message)
 
+        if self.incoming_message_text == '/tickets':
+            success = self.send_message("yay")
+
         return success
 
     def send_message(self, message):

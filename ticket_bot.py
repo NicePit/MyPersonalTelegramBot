@@ -95,7 +95,7 @@ class FareFinder:
                 except Exception as e:
                     self.selenium_driver.execute_script("arguments[0].scrollIntoView();", date)
                     y_location = date.location['y']
-                    self.selenium_driver.execute_script(f"window.scrollTo(0, {y_location-100})")
+                    self.selenium_driver.execute_script(f"window.scrollTo(0, {y_location - 100})")
                     print("Scrolling up a bit")
                     time.sleep(2 ** n)
                     n += 1
@@ -281,7 +281,10 @@ class FareFinder:
         self.selenium_driver.close()
 
 
-if __name__ == '__main__':
+def search_tickets(min_days, max_days, departure_months, departure_days):
+    print("New request for searching tickets, starting FareFinder job")
     finder = FareFinder()
-    direct_tickets, all_tickets = finder.run(min_days=4, max_days=8, departure_months=[4], departure_days=[1])
-    print()
+    direct_tickets, all_tickets = finder.run(min_days=min_days, max_days=max_days,
+                                             departure_months=departure_months, departure_days=departure_days)
+    finder.close_driver()
+    print("FareFinder job has been successfully completed")
